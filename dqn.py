@@ -1,5 +1,5 @@
 import numpy as np
-import gym
+import gymnasium as gym
 import random
 from datetime import datetime
 import math
@@ -22,6 +22,11 @@ print(f"Using \"{DEVICE}\" device.")
 env = gym.make("FrozenLake-v1", render_mode='rgb_array')
 env.reset()
 
+# Use a global plot to support live rendering
+FIG, AX = plt.subplots()
+IMG = AX.imshow(env.render())
+plt.show(block=False)
+
 def render_env(env, title=None):
     """
     Render environment image.
@@ -30,11 +35,13 @@ def render_env(env, title=None):
     
     :return: None
     """
-    clear_output(wait=True)
-    plt.imshow(env.render())
+
     if title:
-        plt.title(title)
-    plt.show()
+        FIG.suptitle(title)
+    
+    IMG.set_data(env.render())
+    FIG.canvas.draw()
+    plt.pause(0.0001)
     
 def render_state(env, state_idx, transforms):
     """
@@ -155,7 +162,7 @@ class Agent():
         self.gamma = GAMMA
         self.checkpoint_freq = 100
         
-    def train(self, n_episodes, n_steps, save_dir, exploration_rate=1.0, resume_training=False):
+    def train(self, n_episodes, n_steps, exploration_rate=1.0, resume_training=False, pretrained_model=None):
         """
         Train a model with the following params
         
@@ -168,12 +175,12 @@ class Agent():
         :return: None
         """
         if resume_training:
-            self.load_model(save_dir)
+            self.load_model(pretrained_model)
             
         for episode in range(n_episodes):
             # Save model every 20 episodes
             if (episode > 0 and episode % self.checkpoint_freq == 0):
-                self.save_model(save_dir, episode)
+                self.save_model(episode)
                 
             state, info = self.env.reset()
             print(f"Episode: {episode}")
@@ -218,7 +225,7 @@ class Agent():
                 if done:
                     break;
                     
-    def test(self, n_episodes=100, n_steps=10, model_dir=None):
+    def test(self, n_episodes=100, n_steps=10, pretrained_model=None):
         """
         Test a pretrained model
         
@@ -228,9 +235,9 @@ class Agent():
         
         :return: None
         """
-        if model_dir:
+        if pretrained_model:
             # Automatically load the latest saved model in the directory
-            self.load_model(model_dir)
+            self.load_model(pretrained_model)
         
         n_success = 0
         n_failures = 0
@@ -311,7 +318,7 @@ class Agent():
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
         
-    def save_model(self, dir, checkpoint_num):
+    def save_model(self, checkpoint_num):
         """
         Save a model
         
@@ -323,7 +330,7 @@ class Agent():
         # Set up path
         timestamp = int(datetime.now().timestamp())
         filename = "model_" + str(checkpoint_num) + "_" + str(timestamp) + ".pt"
-        path = os.path.join(dir, filename)
+        path = os.path.join('checkpoints', filename)
         
         # Save state dicts for policy and target net
         torch.save({
@@ -332,7 +339,7 @@ class Agent():
             'optim_state_dict': self.optimizer.state_dict(),
         }, path)
         
-    def load_model(self, dir):
+    def load_model(self, filename):
         """
         Load a model
         
@@ -340,14 +347,9 @@ class Agent():
         
         :return: None
         """
-        # get model with latest timestamp
-        path = os.path.join(dir, "*")
-        all_models = glob.glob(path)
-        latest_model = max(all_models, key=os.path.getctime)
-        print(latest_model)
         
         # Load model
-        state_dicts = torch.load(latest_model)
+        state_dicts = torch.load(filename, map_location=DEVICE)
         self.policy_net.load_state_dict(state_dicts['policy_net_state_dict'])
         self.target_net.load_state_dict(state_dicts['target_net_state_dict'])
         self.optimizer.load_state_dict(state_dicts['optim_state_dict'])
@@ -367,7 +369,7 @@ env.reset()
 dqn_trainer = Agent(env, policy_net, target_net, optimizer)
 
 # Train
-dqn_trainer.train(20000, 10, 'models', resume_training=True)
+# dqn_trainer.train(20000, 10, resume_training=False)
 
 # Test
-dqn_trainer.test(n_episodes=100, n_steps=20, model_dir='models')
+dqn_trainer.test(n_episodes=100, n_steps=20, pretrained_model='model_best.pt')
