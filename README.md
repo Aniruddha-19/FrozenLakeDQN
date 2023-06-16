@@ -3,3 +3,10 @@ A research project with the aim of exploring deep q-learning as a tool to naviga
 
 ### Project Status
 This project is an ongoing effort. The goal is to incorporate randomness in map layout and slipperiness to increase complexity and evaluate the performance of a deep Q-learning approach.
+
+Currently, the map is static. The layout of holes and the goal is not changed throughout training or testing. After training for about 6 hours, the model achieved around 80% accuracy.
+
+### Future Goals
+- Deal with truncations by forcing model to train with a smaller step size
+- Include randomness
+- Include slipperiness (non-deterministic action outcome)
