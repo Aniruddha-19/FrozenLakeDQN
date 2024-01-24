@@ -318,19 +318,44 @@ class Agent():
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
         
+    # def save_model(self, checkpoint_num):
+        # """
+        # Save a model
+        
+        # :param dir: Directory where the model is to be saved
+        # :param checkpoint_num: Include a checkpoint number in the model's name
+        
+        # :return: None
+        # """
+        # Set up path
+        # timestamp = int(datetime.now().timestamp())
+        # filename = "model_" + str(checkpoint_num) + "_" + str(timestamp) + ".pt"
+        # path = os.path.join('checkpoints', filename)
+        
+        # Save state dicts for policy and target net
+        # torch.save({
+        #     'policy_net_state_dict': self.policy_net.state_dict(),
+        #     'target_net_state_dict': self.target_net.state_dict(),
+        #     'optim_state_dict': self.optimizer.state_dict(),
+        # }, path)
     def save_model(self, checkpoint_num):
         """
         Save a model
         
-        :param dir: Directory where the model is to be saved
         :param checkpoint_num: Include a checkpoint number in the model's name
         
         :return: None
         """
-        # Set up path
-        timestamp = int(datetime.now().timestamp())
-        filename = "model_" + str(checkpoint_num) + "_" + str(timestamp) + ".pt"
-        path = os.path.join('checkpoints', filename)
+        # Set up directory path
+        save_dir = 'checkpoints'
+        os.makedirs(save_dir, exist_ok=True)  # Ensure the directory exists
+
+        # Create a human-readable timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        # Construct filename
+        filename = f"model_{checkpoint_num}_{timestamp}.pt"
+        path = os.path.join(save_dir, filename)
         
         # Save state dicts for policy and target net
         torch.save({
@@ -369,7 +394,7 @@ env.reset()
 dqn_trainer = Agent(env, policy_net, target_net, optimizer)
 
 # Train
-# dqn_trainer.train(20000, 10, resume_training=False)
+dqn_trainer.train(20000, 10, resume_training=False, pretrained_model=None)
 
 # Test
-dqn_trainer.test(n_episodes=100, n_steps=20, pretrained_model='model_best.pt')
+#dqn_trainer.test(n_episodes=100, n_steps=20, pretrained_model='model_best.pt')
