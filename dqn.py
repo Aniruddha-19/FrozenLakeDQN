@@ -355,13 +355,16 @@ class Agent():
 
         # Construct filename
         filename = f"model_{checkpoint_num}_{timestamp}.pt"
-        path = os.path.join(save_dir, filename)
+        path = os.path.join('checkpoints', filename)
         
         # Save state dicts for policy and target net
         torch.save({
-            'policy_net_state_dict': self.policy_net.state_dict(),
-            'target_net_state_dict': self.target_net.state_dict(),
-            'optim_state_dict': self.optimizer.state_dict(),
+            'policy_net':self.policy_net,
+            'target_net':self.target_net,
+            'optimizer':self.optimizer,
+            #'policy_net_state_dict': self.policy_net.state_dict(),
+            #'target_net_state_dict': self.target_net.state_dict(),
+            #'optim_state_dict': self.optimizer.state_dict(),
         }, path)
         
     def load_model(self, filename):
@@ -375,9 +378,12 @@ class Agent():
         
         # Load model
         state_dicts = torch.load(filename, map_location=DEVICE)
-        self.policy_net.load_state_dict(state_dicts['policy_net_state_dict'])
-        self.target_net.load_state_dict(state_dicts['target_net_state_dict'])
-        self.optimizer.load_state_dict(state_dicts['optim_state_dict'])
+        self.policy_net = checkpoint['policy_net']
+        self.target_net = checkpoint['target_net']
+        self.optimizer = checkpoint['optimizer']
+        #self.policy_net.load_state_dict(state_dicts['policy_net_state_dict'])
+        #self.target_net.load_state_dict(state_dicts['target_net_state_dict'])
+        #self.optimizer.load_state_dict(state_dicts['optim_state_dict'])
         
         # Put models in eval mode
         self.policy_net.eval()
@@ -397,4 +403,4 @@ dqn_trainer = Agent(env, policy_net, target_net, optimizer)
 dqn_trainer.train(20000, 10, resume_training=False, pretrained_model=None)
 
 # Test
-#dqn_trainer.test(n_episodes=100, n_steps=20, pretrained_model='model_best.pt')
+# dqn_trainer.test(n_episodes=100, n_steps=20, pretrained_model='model_best.pt')
